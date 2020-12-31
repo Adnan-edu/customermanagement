@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .models import *
+#To create multiple form within one form
+from django.forms import inlineformset_factory
 from .forms import OrderForm
 # Create your views here.
 
@@ -37,16 +39,20 @@ def customer(request,pk_test):
     context = {'customer':customer,'orders':orders,'orders_count':orders_count}
     return render(request,'accounts/customer.html',context)
 
-def createOrder(request):
-	form = OrderForm()
-	if request.method == 'POST':
-		form = OrderForm(request.POST)
-		if form.is_valid():
-			form.save()
-			return redirect('/')
-
-	context = {'form':form}
-	return render(request, 'accounts/order_form.html', context)
+def createOrder(request,pk):
+    OrderFormSet = inlineformset_factory(Customer,Order,fields=('product','status'),extra=10)
+    customer = Customer.objects.get(id=pk)
+    #form = OrderForm(initial={'customer':customer})
+    #queryset=Order.objects.none() - If we have already order objects there don't reference them.
+    formset = OrderFormSet(queryset=Order.objects.none(),instance=customer)
+    if request.method == 'POST':
+        #form = OrderForm(request.POST)
+        formset = OrderFormSet(request.POST,instance=customer)
+        if formset.is_valid():
+            formset.save()
+            return redirect('/')
+    context = {'formset':formset}
+    return render(request, 'accounts/order_form.html', context)
 
 def updateOrder(request, pk):
 
