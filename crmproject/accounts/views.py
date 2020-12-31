@@ -4,6 +4,8 @@ from .models import *
 #To create multiple form within one form
 from django.forms import inlineformset_factory
 from .forms import OrderForm
+from .filters import OrderFilter
+
 # Create your views here.
 
 
@@ -34,9 +36,16 @@ def products(request):
 
 def customer(request,pk_test):
     customer = Customer.objects.get(id=pk_test)
+    #Filter-We are first going to query all the orders.
+    
     orders = customer.order_set.all()
     orders_count = orders.count()
-    context = {'customer':customer,'orders':orders,'orders_count':orders_count}
+    #We are going to throw them into this filter
+    #And based on request data is-request.GET we are going to filter this data down
+    myFilter = OrderFilter(request.GET,queryset=orders)
+    orders = myFilter.qs
+    context = {'customer':customer,'orders':orders,'orders_count':orders_count
+    ,'myFilter':myFilter}
     return render(request,'accounts/customer.html',context)
 
 def createOrder(request,pk):
